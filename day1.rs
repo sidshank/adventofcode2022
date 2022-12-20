@@ -16,8 +16,8 @@ fn main() {
             sum = 0;
             continue;
         }
-        // let num: i32 = line.parse().unwrap();
-        sum += line.parse().unwrap();
+        let num: i32 = line.parse().unwrap();
+        sum += num;
     }
     if sum != 0 {
         calorie_sums.push(sum);
