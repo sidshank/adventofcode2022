@@ -3,6 +3,9 @@ use std::io::{BufRead, BufReader};
 
 fn main() {
     // Define a constant for the number of knots in the rope
+    // Doesn't quite work for 3 or more knots. Produces an answer that is close, but not right.
+    // Likely because of the way I am modelling the movement of the final knot when it needs to move
+    // diagonally.
     const NUMBER_OF_KNOTS: u8 = 2;
 
     let lines = BufReader::new(File::open("day9.txt").unwrap()).lines();
@@ -35,79 +38,90 @@ fn main() {
 
             let mut head = knots[head_index];
             let mut tail = knots[tail_index];
-            match c {
-                'U' => {
-                    for _ in 0..n {
-                        head.1 += 1;
+            if head_index == 0 {
+                match c {
+                    'U' => {
+                        for _ in 0..n {
+                            head.1 += 1;
+                        }
                     }
-                }
-                'D' => {
-                    for _ in 0..n {
-                        head.1 -= 1;
+                    'D' => {
+                        for _ in 0..n {
+                            head.1 -= 1;
+                        }
                     }
-                }
-                'R' => {
-                    for _ in 0..n {
-                        head.0 += 1;
+                    'R' => {
+                        for _ in 0..n {
+                            head.0 += 1;
+                        }
                     }
-                }
-                'L' => {
-                    for _ in 0..n {
-                        head.0 -= 1;
+                    'L' => {
+                        for _ in 0..n {
+                            head.0 -= 1;
+                        }
                     }
+                    _ => {}
                 }
-                _ => {}
+                knots[head_index] = head;
             }
-            knots[head_index] = head;
-            let mut diff_x = head.0 - tail.0;
-            let mut diff_y = head.1 - tail.1;
+            let diff_x = head.0 - tail.0;
+            let diff_y = head.1 - tail.1;
             if diff_x.abs() < 2 && diff_y.abs() < 2 {
                 continue;
             }
-            if diff_x.abs() == 1 {
+            let mut diagonal_mode = false;
+            let mut original_tail = (tail.0, tail.1);
+            if diff_x.abs() < diff_y.abs() {
                 tail.0 = head.0;
-                diff_x = 0;
-            } else if diff_y.abs() == 1 {
+            } else if diff_y.abs() < diff_x.abs() {
                 tail.1 = head.1;
-                diff_y = 0;
-            }
-            if diff_x == 0 {
-                if head.1 > tail.1 {
-                    while head.1 > tail.1 + 1 {
-                        tail.1 += 1;
-                        if tail_index == NUMBER_OF_KNOTS as usize - 1 {
-                            add_to_visited(tail.0, tail.1);
-                        }
-                    }
-                } else {
-                    while head.1 < tail.1 - 1 {
-                        tail.1 -= 1;
-                        if tail_index == NUMBER_OF_KNOTS as usize - 1 {
-                            add_to_visited(tail.0, tail.1);
-                        }
-                    }
-                }
             } else {
-                // diff_y = 0
-                if head.0 > tail.0 {
-                    while head.0 > tail.0 + 1 {
-                        tail.0 += 1;
-                        if tail_index == NUMBER_OF_KNOTS as usize - 1 {
-                            add_to_visited(tail.0, tail.1);
-                        }
+                diagonal_mode = true;
+            }
+            while head.1 > tail.1 + 1 {
+                tail.1 += 1;
+                if tail_index == (NUMBER_OF_KNOTS as usize) - 1 && !diagonal_mode {
+                    add_to_visited(tail.0, tail.1);
+                }
+            }
+            while head.1 < tail.1 - 1 {
+                tail.1 -= 1;
+                if tail_index == (NUMBER_OF_KNOTS as usize) - 1 && !diagonal_mode {
+                    add_to_visited(tail.0, tail.1);
+                }
+            }
+            while head.0 > tail.0 + 1 {
+                tail.0 += 1;
+                if tail_index == (NUMBER_OF_KNOTS as usize) - 1 && !diagonal_mode {
+                    add_to_visited(tail.0, tail.1);
+                }
+            }
+            while head.0 < tail.0 - 1 {
+                tail.0 -= 1;
+                if tail_index == (NUMBER_OF_KNOTS as usize) - 1 && !diagonal_mode {
+                    add_to_visited(tail.0, tail.1);
+                }
+            }
+            let mut temp_tail = (tail.0, tail.1);
+            if diagonal_mode {
+                while temp_tail.0 != original_tail.0 && temp_tail.1 != original_tail.1 {
+                    if tail_index == (NUMBER_OF_KNOTS as usize) - 1 {
+                        add_to_visited(temp_tail.0, temp_tail.1);
                     }
-                } else {
-                    while head.0 < tail.0 - 1 {
-                        tail.0 -= 1;
-                        if tail_index == NUMBER_OF_KNOTS as usize - 1 {
-                            add_to_visited(tail.0, tail.1);
-                        }
+                    if temp_tail.0 < original_tail.0 {
+                        temp_tail.0 += 1;
+                    } else if temp_tail.0 > original_tail.0 {
+                        temp_tail.0 -= 1;
+                    }
+                    if temp_tail.1 < original_tail.1 {
+                        temp_tail.1 += 1;
+                    } else if temp_tail.1 > original_tail.1 {
+                        temp_tail.1 -= 1;
                     }
                 }
             }
             knots[tail_index] = tail;
         }
     }
-    // Part 1 (Ans for day.txt : 6354)
     println!("The tail visits {} locations", visited.len());
 }
